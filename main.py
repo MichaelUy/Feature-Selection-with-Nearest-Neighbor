@@ -73,7 +73,7 @@ def getAccuracy(dataSet,flags):
 
 # Forward selection
 # in:(flags, featureSet,best accuracy) out:(feature set and accuracy)
-def getFeatureSet(possibleFlags,currFeatures, bestAccuracy):
+def getFeatureSet(dataSet,possibleFlags,currFeatures, bestAccuracy):
 	accuracy = 0.0
 	#featureSet = currFeatures
 	flagsLeft = [i for i in possibleFlags if i not in currFeatures]
@@ -111,8 +111,45 @@ def getFeatureSet(possibleFlags,currFeatures, bestAccuracy):
 		print ','.join(str(i) for i in featureSet),
 	print "} was best, accuracy is ", y,"%\n"
 	return (featureSet, y)
+
+
+
+
+def forward(fileName):
+	dataSet = mkDataSet(fileName)
+	instances = len(dataSet)
+	features = len(dataSet[0])-1
+	print "This dataset has ",features," features (not including the class attribute), with "\
+	,instances," instances.\n"
+	print "Please wait while I normalize the data...",
+	#call normalize
+	dataSet = normalize(dataSet)
+	print "Done!"
+	flags = [0,1,1,1,1,1,1,1,1,1,1]
+	accuracy = getAccuracy(dataSet,flags)
+	print "Running nearest neighbor with all "\
+	 ,features," features, using \"leaving-one-out\" evaluation, I get an accuracy of "\
+	 ,accuracy,"%\n"
+	print "Beginning search.\n"
+	posFlags = [i for i in range(1,features)]
+	featureSet = []
+	bestFeatureSet = []
+	bestAccuracy = 0.0
+	for i in range(1,features):
+		retValue  = getFeatureSet(dataSet,posFlags,featureSet,bestAccuracy)
+		featureSet =retValue[0]
+		accuracy = retValue[1]
+		if (accuracy > bestAccuracy):
+			bestAccuracy = accuracy
+			bestFeatureSet = list(featureSet) 
+	print "Finished search!! The best feature subset is {",
+	print ','.join(str(i) for i in bestFeatureSet),
+	print "},which has an accuracy of ",bestAccuracy,"%"
+
+
 # Main
 fileName = ""
+algorithm = 0
 print "Welcome to Michael Uy\'s Feature Selection Algorithm"
 while(1):	
 	try:
@@ -123,7 +160,19 @@ while(1):
 		continue
 	else:
 		break
+print "Type in the number of the algorithm you want to test: "
+print "1) Forward Selection"
+print "2) Backward Elimination"
+print "3) Original Algorithm"
+algorithm = input()
+if (algorithm == 1):
+	forward(fileName)
+elif (algorithm == 2):
+	forward(fileName)
+elif (algorithm == 3):
+	forward(fileName)	
 
+'''
 dataSet = mkDataSet(fileName)
 instances = len(dataSet)
 features = len(dataSet[0])-1
@@ -133,15 +182,11 @@ print "Please wait while I normalize the data...",
 #call normalize
 dataSet = normalize(dataSet)
 print "Done!"
-
-
 flags = [0,1,1,1,1,1,1,1,1,1,1]
 accuracy = getAccuracy(dataSet,flags)
 print "Running nearest neighbor with all "\
  ,features," features, using \"leaving-one-out\" evaluation, I get an accuracy of "\
  ,accuracy,"%\n"
-
-#featureSets = 
 print "Beginning search.\n"
 posFlags = [i for i in range(1,features)]
 featureSet = []
@@ -157,29 +202,4 @@ for i in range(features):
 print "Finished search!! The best feature subset is {",
 print ','.join(str(i) for i in bestFeatureSet),
 print "},which has an accuracy of ",bestAccuracy,"%"
-
 '''
-flagQuality =[0.0]*(features)
-for i in range(1,instances):
-	flags = [0]*instances
-	flags[i] = 1
-	accuracy = getAccuracy(dataSet,flags)
-	flagQuality[i-1] = accuracy
-	print "Using feature(s) {",i,"} accuracy is ",flagQuality[i-1],"%"
-
-#make featureSet
-y = max(flagQuality)
-for i in range(posFlags):
-	if (flagQuality[i-1]== y):
-		featureSet.append(posFlags.pop(i))
-featureSet = [i+1 for i, j in enumerate(flagQuality) if j == y]
-print "Feature set{",
-if (len(featureSet)== 1):
-	print featureSet[0],
-else:
-	print ','.join(i for i in featureSet),
-print "} was best, accuracy is ", y,"%"
-'''
-
-
-
