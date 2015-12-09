@@ -98,9 +98,15 @@ def getFeatureSet(dataSet,possibleFlags,currFeatures, bestAccuracy):
 		currIndex += 1
 	featureSet = list(currFeatures)
 	y = max(flagScores)
-	for i in range(len(flagsLeft)-1):
+	print "max: ",y
+	print "flagScores: ", flagScores
+	print "flagLeft: ", flagsLeft
+	for i in range(len(flagsLeft)):
+		print " if ",flagScores[i]," == ",y
 		if (flagScores[i]== y):
+			print "pop ",flagsLeft[i]
 			featureSet.append(flagsLeft.pop(i))
+			break
 	if(y < bestAccuracy):
 		print "\n(Warning, Accuracy has decreased!",
 		print " Continuing search in case of local maxima)",
@@ -112,7 +118,53 @@ def getFeatureSet(dataSet,possibleFlags,currFeatures, bestAccuracy):
 	print "} was best, accuracy is ", y,"%\n"
 	return (featureSet, y)
 
-
+def getBackwardFeatureSet(dataSet,possibleFlags,currFeatures, bestAccuracy):
+	accuracy = 0.0
+	#featureSet = currFeatures
+	flagsLeft = list(currFeatures)
+	#print "flags left: ", flagsLeft
+	flagScores = [0.0]* len(flagsLeft)
+	currIndex=0
+	for i in flagsLeft:
+		flags = [1]* (len(possibleFlags)+1)
+		flags[0] = 0
+		for j in currFeatures:
+			flags[j] = 1
+		flags[i] = 0
+		accuracy = getAccuracy(dataSet,flags)
+		flagScores[currIndex] = accuracy
+		featureSet = list(currFeatures)
+		featureSet.remove(i)
+		print "Using feature(s) {",
+		if (len(featureSet)== 1):
+			print featureSet[0],
+		else:
+			print ','.join(str(i) for i in featureSet),
+		print"} accuracy is ",flagScores[currIndex],"%"
+		currIndex += 1
+	featureSet = list(currFeatures)
+	y = max(flagScores)
+	print "max: ",y
+	print "flagScores: ", flagScores
+	print "flagLeft: ", flagsLeft
+	weakestLink = 0
+	for i in range(len(flagScores)):
+		print " if ",flagScores[i]," == ",y
+		if (flagScores[i]== y):
+			print "Pop", flagsLeft[i]
+			weakestLink = flagsLeft.pop(i)
+			featureSet.remove(weakestLink)
+			break
+	if(y < bestAccuracy):
+		print "\n(Warning, Accuracy has decreased!",
+		print " Continuing search in case of local maxima)",
+	print "\nFeature set{",
+	if (len(featureSet)== 1):
+		print featureSet[0],
+	else:
+		print ','.join(str(i) for i in featureSet),
+	print "} was best, removing",weakestLink," has the highest accuracy,", y,"%\n"
+	return (featureSet, y)
 
 
 def forward(fileName):
@@ -135,7 +187,7 @@ def forward(fileName):
 	featureSet = []
 	bestFeatureSet = []
 	bestAccuracy = 0.0
-	for i in range(1,features):
+	for i in range(features-1):
 		retValue  = getFeatureSet(dataSet,posFlags,featureSet,bestAccuracy)
 		featureSet =retValue[0]
 		accuracy = retValue[1]
@@ -146,7 +198,36 @@ def forward(fileName):
 	print ','.join(str(i) for i in bestFeatureSet),
 	print "},which has an accuracy of ",bestAccuracy,"%"
 
-
+def backward(fileName):
+	dataSet = mkDataSet(fileName)
+	instances = len(dataSet)
+	features = len(dataSet[0])-1
+	print "This dataset has ",features," features (not including the class attribute), with "\
+	,instances," instances.\n"
+	print "Please wait while I normalize the data...",
+	#call normalize
+	dataSet = normalize(dataSet)
+	print "Done!"
+	flags = [0,1,1,1,1,1,1,1,1,1,1]
+	accuracy = getAccuracy(dataSet,flags)
+	print "Running nearest neighbor with all "\
+	 ,features," features, using \"leaving-one-out\" evaluation, I get an accuracy of "\
+	 ,accuracy,"%\n"
+	print "Beginning search.\n"
+	posFlags = [i for i in range(1,features)]
+	featureSet = [i for i in range(1,features)]
+	bestFeatureSet = [i for i in range(1,features)]
+	bestAccuracy = 0.0
+	for i in range(features-2):
+		retValue  = getBackwardFeatureSet(dataSet,posFlags,featureSet,bestAccuracy)
+		featureSet =retValue[0]
+		accuracy = retValue[1]
+		if (accuracy > bestAccuracy):
+			bestAccuracy = accuracy
+			bestFeatureSet = list(featureSet) 
+	print "Finished search!! The best feature subset is {",
+	print ','.join(str(i) for i in bestFeatureSet),
+	print "},which has an accuracy of ",bestAccuracy,"%"
 # Main
 fileName = ""
 algorithm = 0
@@ -168,38 +249,8 @@ algorithm = input()
 if (algorithm == 1):
 	forward(fileName)
 elif (algorithm == 2):
-	forward(fileName)
+	backward(fileName)
 elif (algorithm == 3):
 	forward(fileName)	
 
-'''
-dataSet = mkDataSet(fileName)
-instances = len(dataSet)
-features = len(dataSet[0])-1
-print "This dataset has ",features," features (not including the class attribute), with "\
-,instances," instances.\n"
-print "Please wait while I normalize the data...",
-#call normalize
-dataSet = normalize(dataSet)
-print "Done!"
-flags = [0,1,1,1,1,1,1,1,1,1,1]
-accuracy = getAccuracy(dataSet,flags)
-print "Running nearest neighbor with all "\
- ,features," features, using \"leaving-one-out\" evaluation, I get an accuracy of "\
- ,accuracy,"%\n"
-print "Beginning search.\n"
-posFlags = [i for i in range(1,features)]
-featureSet = []
-bestFeatureSet = []
-bestAccuracy = 0.0
-for i in range(features):
-	retValue  = getFeatureSet(posFlags,featureSet,bestAccuracy)
-	featureSet =retValue[0]
-	accuracy = retValue[1]
-	if (accuracy > bestAccuracy):
-		bestAccuracy = accuracy
-		bestFeatureSet = list(featureSet) 
-print "Finished search!! The best feature subset is {",
-print ','.join(str(i) for i in bestFeatureSet),
-print "},which has an accuracy of ",bestAccuracy,"%"
-'''
+
