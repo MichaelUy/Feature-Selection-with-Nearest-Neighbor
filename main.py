@@ -98,19 +98,15 @@ def getFeatureSet(dataSet,possibleFlags,currFeatures, bestAccuracy):
 		currIndex += 1
 	featureSet = list(currFeatures)
 	y = max(flagScores)
-	print "max: ",y
-	print "flagScores: ", flagScores
-	print "flagLeft: ", flagsLeft
 	for i in range(len(flagsLeft)):
-		print " if ",flagScores[i]," == ",y
 		if (flagScores[i]== y):
-			print "pop ",flagsLeft[i]
 			featureSet.append(flagsLeft.pop(i))
 			break
+	print "\n"
 	if(y < bestAccuracy):
-		print "\n(Warning, Accuracy has decreased!",
+		print "(Warning, Accuracy has decreased!",
 		print " Continuing search in case of local maxima)",
-	print "\nFeature set{",
+	print "Feature set{",
 	if (len(featureSet)== 1):
 		print featureSet[0],
 	else:
@@ -126,8 +122,7 @@ def getBackwardFeatureSet(dataSet,possibleFlags,currFeatures, bestAccuracy):
 	flagScores = [0.0]* len(flagsLeft)
 	currIndex=0
 	for i in flagsLeft:
-		flags = [1]* (len(possibleFlags)+1)
-		flags[0] = 0
+		flags = [0]* (len(possibleFlags)+1)
 		for j in currFeatures:
 			flags[j] = 1
 		flags[i] = 0
@@ -144,14 +139,9 @@ def getBackwardFeatureSet(dataSet,possibleFlags,currFeatures, bestAccuracy):
 		currIndex += 1
 	featureSet = list(currFeatures)
 	y = max(flagScores)
-	print "max: ",y
-	print "flagScores: ", flagScores
-	print "flagLeft: ", flagsLeft
 	weakestLink = 0
 	for i in range(len(flagScores)):
-		print " if ",flagScores[i]," == ",y
 		if (flagScores[i]== y):
-			print "Pop", flagsLeft[i]
 			weakestLink = flagsLeft.pop(i)
 			featureSet.remove(weakestLink)
 			break
@@ -164,6 +154,45 @@ def getBackwardFeatureSet(dataSet,possibleFlags,currFeatures, bestAccuracy):
 	else:
 		print ','.join(str(i) for i in featureSet),
 	print "} was best, removing",weakestLink," has the highest accuracy,", y,"%\n"
+	return (featureSet, y)
+#in(dataSet,sortedScores, bestaccuracy), out:(bestFeatures,bestAccuracy)
+def getOriginalFeatureSet(dataSet,sortedScores, bestAccuracy):
+	accuracy = 0.0
+	#currFeatures = []
+	flagsLeft = [i[1] for i in sortedScores]
+	#print "flags left: ", flagsLeft
+	flagScores = [0.0]* len(flagsLeft)
+	currIndex=0
+	flags = [0]* (len(sortedScores)+1)
+	for i in range(len(flagsLeft)-1):
+		flags[flagsLeft[len(flagsLeft)-i]] = 1
+		accuracy = getAccuracy(dataSet,flags)
+		flagScores[currIndex] = accuracy
+		featureSet = flagsLeft[(len(flagsLeft)-i-1):]
+		#featureSet.append(flagsLeft[i])
+		print "Using feature(s) {",
+		if (len(featureSet)== 1):
+			print featureSet[0],
+		else:
+			print ','.join(str(i) for i in featureSet),
+		print"} accuracy is ",flagScores[currIndex],"%"
+		currIndex += 1
+	y = max(flagScores)
+	print "max: ",y
+	print "flagScores: ", flagScores
+	print "flagLeft: ", flagsLeft
+	for i in range(len(flagsLeft)):
+		print " if ",flagScores[i]," == ",y
+		if (flagScores[i]== y):
+			print "pop ",flagsLeft[i]
+			featureSet =flagsLeft[i:]
+			break
+	print "\nFeature set{",
+	if (len(featureSet)== 1):
+		print featureSet[0],
+	else:
+		print ','.join(str(i) for i in featureSet),
+	print "} was best, accuracy is ", y,"%\n"
 	return (featureSet, y)
 
 
@@ -183,11 +212,11 @@ def forward(fileName):
 	 ,features," features, using \"leaving-one-out\" evaluation, I get an accuracy of "\
 	 ,accuracy,"%\n"
 	print "Beginning search.\n"
-	posFlags = [i for i in range(1,features)]
+	posFlags = [i for i in range(1,features+1)]
 	featureSet = []
 	bestFeatureSet = []
 	bestAccuracy = 0.0
-	for i in range(features-1):
+	for i in range(features):
 		retValue  = getFeatureSet(dataSet,posFlags,featureSet,bestAccuracy)
 		featureSet =retValue[0]
 		accuracy = retValue[1]
@@ -214,11 +243,11 @@ def backward(fileName):
 	 ,features," features, using \"leaving-one-out\" evaluation, I get an accuracy of "\
 	 ,accuracy,"%\n"
 	print "Beginning search.\n"
-	posFlags = [i for i in range(1,features)]
-	featureSet = [i for i in range(1,features)]
-	bestFeatureSet = [i for i in range(1,features)]
+	posFlags = [i for i in range(1,features+1)]
+	featureSet = [i for i in range(1,features+1)]
+	bestFeatureSet = [i for i in range(1,features+1)]
 	bestAccuracy = 0.0
-	for i in range(features-2):
+	for i in range(features-1):
 		retValue  = getBackwardFeatureSet(dataSet,posFlags,featureSet,bestAccuracy)
 		featureSet =retValue[0]
 		accuracy = retValue[1]
@@ -228,6 +257,86 @@ def backward(fileName):
 	print "Finished search!! The best feature subset is {",
 	print ','.join(str(i) for i in bestFeatureSet),
 	print "},which has an accuracy of ",bestAccuracy,"%"
+
+def original(fileName):
+	dataSet = mkDataSet(fileName)
+	instances = len(dataSet)
+	features = len(dataSet[0])-1
+	print "This dataset has ",features," features (not including the class attribute), with "\
+	,instances," instances.\n"
+	print "Please wait while I normalize the data...",
+	#call normalize
+	dataSet = normalize(dataSet)
+	print "Done!"
+	flags = [0,1,1,1,1,1,1,1,1,1,1]
+	accuracy = getAccuracy(dataSet,flags)
+	print "Running nearest neighbor with all "\
+	 ,features," features, using \"leaving-one-out\" evaluation, I get an accuracy of "\
+	 ,accuracy,"%\n"
+	print "Beginning search.\n"
+	posFlags = [i for i in range(1,features+1)]
+	featureSet = []
+	bestFeatureSet = []
+	bestAccuracy = 0.0
+	#runn feature evaluation for single features
+	accuracy = 0.0
+	currFeatures = []
+	flagsLeft = [i for i in posFlags if i not in currFeatures]
+	print "length of flagsLeft: ", len(flagsLeft)
+	#print "flags left: ", flagsLeft
+	flagScores = [0.0]* len(flagsLeft)
+	currIndex=0
+	for i in flagsLeft:
+		flags = [0]* (len(posFlags)+1)
+		flags[i] = 1
+		for j in currFeatures:
+			flags[j] = 1
+		accuracy = getAccuracy(dataSet,flags)
+		flagScores[currIndex] = accuracy
+		featureSet = list(currFeatures)
+		featureSet.append(i)
+		print "Using feature(s) {",
+		if (len(featureSet)== 1):
+			print featureSet[0],
+		else:
+			print ','.join(str(i) for i in featureSet),
+		print"} accuracy is ",flagScores[currIndex],"%"
+		currIndex += 1
+	featureSet = list(currFeatures)
+	y = max(flagScores)
+	print "max: ",y
+	print "flagScores: ", flagScores
+	print "flagLeft: ", flagsLeft
+	for i in range(len(flagsLeft)):
+		print " if ",flagScores[i]," == ",y
+		if (flagScores[i]== y):
+			print "pop ",flagsLeft[i]
+			featureSet.append(flagsLeft[i])
+			break
+	sortedScores=[(0.00,0)]*(len(flagScores))
+	print "length of sortedscores: ", len(sortedScores)
+	for i in range(len(flagScores)-1):
+		sortedScores= (flagScores[i],i)
+	sortedScores = sorted(sortedScores)
+	print sortedScores
+	print "\nFeature set{",
+	if (len(featureSet)== 1):
+		print featureSet[0],
+	else:
+		print ','.join(str(i) for i in featureSet),
+	print "} was best, accuracy is ", y,"%\n"
+	accuracy = y
+	if (accuracy > bestAccuracy):
+		bestAccuracy = accuracy
+		bestFeatureSet = list(featureSet) 
+	retValue  = getOriginalFeatureSet(dataSet,sortedScores,bestAccuracy)
+	featureSet =retValue[0]
+	accuracy = retValue[1]
+'''
+	print "Finished search!! The best feature subset is {",
+	print ','.join(str(i) for i in bestFeatureSet),
+	print "},which has an accuracy of ",bestAccuracy,"%"
+'''
 # Main
 fileName = ""
 algorithm = 0
@@ -251,6 +360,6 @@ if (algorithm == 1):
 elif (algorithm == 2):
 	backward(fileName)
 elif (algorithm == 3):
-	forward(fileName)	
+	original(fileName)	
 
 
