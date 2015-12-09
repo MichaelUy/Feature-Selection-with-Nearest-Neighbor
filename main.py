@@ -30,13 +30,19 @@ for i in dataSet:
 for i in range(len(stds)):
 	stds[i] = math.sqrt(stds[i]/len(dataSet))
 #	calculate new values (x-mean)/std
-print len(dataSet[0])
-
 for i in range(len(dataSet)):
 	for j in range (1,(len(dataSet[0]))):
 		dataSet[i][j] = (dataSet[i][j] - average[j-1])/ stds[j-1]
-# Calculate similarity
 
+# Calculate similarity
+length= len(dataSet[0])
+print length
+def distance(a,b,params): 	#params is a list of 0's/1's for all true flags
+	dis = 0
+	for i in range (len(params)):
+		if params[i]:
+			dis += pow((a[i]-b[i]),2)
+	return math.sqrt(dis)
 
 # Locate neighbors
 
@@ -54,6 +60,6 @@ for i in average:
 print "stds"
 for i in stds:
 	print i
-print "normalized"
-for i in range (10):
-	print dataSet[i]
+flags = [0,1,1,1,1,0,0,0,0,0,0]
+print "distance"
+print distance(dataSet[0],dataSet[1], flags)
